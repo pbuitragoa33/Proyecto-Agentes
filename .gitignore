@@ -1,0 +1,26 @@
+# Entorno virtual
+
+venv/
+
+# Credenciales o variables locales
+
+.env
+*.env
+
+# Archivos temporales o de caché
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# Configuración 
+
+.vscode/
+.idea/
+
+# Archivos del sistema
+
+.DS_Store
+Thumbs.db
