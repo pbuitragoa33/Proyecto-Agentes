@@ -1,3 +1,5 @@
+# **La rama del proyecto es la main**
+
 # Proyecto Orquestación de Agentes
 
 ## Integrantes:
