@@ -9,6 +9,7 @@ from pptx.enum.text import PP_ALIGN
 def crear_presentacion(nombre_programa: str, datos_snies: dict, datos_agente: dict, output_file: str):
     """
     Crea una presentación de PowerPoint con los resultados del análisis.
+    Además en se explicativo de forma breve sobre esos resultados encontrados en el análisis.
     """
     print(f"Generando presentación: {output_file}...")
 

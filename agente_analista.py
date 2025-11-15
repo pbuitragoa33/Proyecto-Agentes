@@ -9,18 +9,33 @@
 
 
 import asyncio
-from agents import Agent, Runner, WebSearchTool, function_tool, AgentOutputSchema
+from agents import Agent, Runner, WebSearchTool, function_tool, AgentOutputSchema, ModelSettings
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 import json
-import os # Asegúrate de que 'os' esté importado si no lo estaba
+import os 
 
 # Cargar variables de entorno (API Keys)
 
 load_dotenv()
+
+
+AZURE_KEY = os.getenv("AZURE_OPENAI_API_KEY")
+AZURE_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
+AZURE_VERSION = os.getenv("OPENAI_API_VERSION")
+
+AZURE_DEPLOYMENT_NAME = "gpt-4.1" 
+
+azure_model_settings = ModelSettings(
+    api_key = AZURE_KEY,
+    azure_endpoint = AZURE_ENDPOINT,
+    #api_version = AZURE_VERSION
+    model = AZURE_DEPLOYMENT_NAME,
+)
+
 
 # Tools
 
@@ -30,10 +45,10 @@ def fetch_url(url: str, max_chars: int = 4000) -> str:
     Descarga una página y retorna texto visible (recortado).
     """
     try:
-        resp = requests.get(url, timeout=20)
+        resp = requests.get(url, timeout = 20)
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
-        text = soup.get_text(separator="\n", strip=True)
+        text = soup.get_text(separator = "\n", strip = True)
         return text[:max_chars]
     except Exception as e:
         return f"Error al acceder a la URL: {str(e)}"
@@ -51,9 +66,11 @@ Formato de salida recomendado (texto):
 """
 
 executor = Agent(
-    name="Executor",
-    instructions=EXECUTOR_INSTRUCTIONS,
-    tools=[WebSearchTool(), fetch_url],
+    name = "Executor",
+    instructions = EXECUTOR_INSTRUCTIONS,
+    tools = [WebSearchTool(), fetch_url],
+    model = AZURE_DEPLOYMENT_NAME,
+    model_settings = azure_model_settings
 )
 
 @function_tool
@@ -68,14 +85,14 @@ async def delegate_to_executor(subtask: str) -> str:
 
 
 class ProgramItem(BaseModel):
-    program_name: Optional[str] = Field(None, description="Nombre del programa")
-    university: Optional[str] = Field(None, description="Universidad")
-    country: Optional[str] = Field(None, description="País")
-    url: Optional[str] = Field(None, description="URL oficial o principal")
-    courses_examples: List[str] = Field(default_factory=list, description="Curso(s) representativos si están disponibles")
-    tuition: Optional[str] = Field(None, description="Costo (monto+moneda+periodicidad) si está disponible")
-    intake_per_year: Optional[str] = Field(None, description="Ingreso/aforo anual si está disponible")
-    sources: List[str] = Field(default_factory=list)
+    program_name: Optional[str] = Field(None, description = "Nombre del programa")
+    university: Optional[str] = Field(None, description = "Universidad")
+    country: Optional[str] = Field(None, description = "País")
+    url: Optional[str] = Field(None, description = "URL oficial o principal")
+    courses_examples: List[str] = Field(default_factory=list, description = "Curso(s) representativos si están disponibles")
+    tuition: Optional[str] = Field(None, description = "Costo (monto+moneda+periodicidad) si está disponible")
+    intake_per_year: Optional[str] = Field(None, description = "Ingreso/aforo anual si está disponible")
+    sources: List[str] = Field(default_factory = list)
 
 class FinalReport(BaseModel):
     input_program: str
@@ -117,10 +134,12 @@ Notas:
 """
 
 planner = Agent(
-    name="Planner",
-    instructions=PLANNER_INSTRUCTIONS,
-    tools=[delegate_to_executor],
-    output_type=AgentOutputSchema(FinalReport, strict_json_schema=False)
+    name = "Planner",
+    instructions = PLANNER_INSTRUCTIONS,
+    tools = [delegate_to_executor],
+    output_type = AgentOutputSchema(FinalReport, strict_json_schema=False),
+    model = AZURE_DEPLOYMENT_NAME,
+    model_settings = azure_model_settings
 )
 
 async def analizar_tendencias(nombre_programa: str, descripcion: str, programas_snies: str) -> dict:
